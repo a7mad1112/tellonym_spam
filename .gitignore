@@ -1,0 +1,22 @@
+# Node.js
+node_modules/
+
+# Build artifacts
+build/
+dist/
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Log files
+*.log
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
