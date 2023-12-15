@@ -6,4 +6,5 @@ const router = Router();
 router.post('/sign-up', asyncHandler(authController.signup));
 router.get('/confirm-email/:token', asyncHandler(authController.confirmEmail));
 router.post('/sign-in', asyncHandler(authController.signin));
+router.patch('/send-code', asyncHandler(authController.sendForgotCode));
 export default router;

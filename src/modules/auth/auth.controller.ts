@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../../utils/sendEmail.js';
 import { emailConfirmationTemplate } from '../../utils/EmailConfirmationForm.js';
+import { customAlphabet } from 'nanoid';
 export const signup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
   if (await userModel.findOne({ email })) {
@@ -156,4 +157,20 @@ export const signin = async (req: Request, res: Response) => {
     { expiresIn: 60 * 60 * 24 * 30 }
   );
   return res.status(200).json(response('success', { token, refreshToekn }));
+};
+
+export const sendForgotCode = async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const code = customAlphabet('1234567890abcdzABCDZ', 6)();
+  const user = await userModel.findOneAndUpdate(
+    { email },
+    { sendCode: code },
+    { new: true }
+  );
+  if (!user) {
+    return res.status(404).json(response('user not found'));
+  }
+  const html = `<h2>The code is: ${code}</h2>`;
+  await sendEmail(email, 'Reset Password', html);
+  return res.status(200).json(response('success', user));
 };
