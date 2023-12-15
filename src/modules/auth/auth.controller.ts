@@ -18,7 +18,7 @@ export const signup = async (req: Request, res: Response) => {
         )
       );
   }
-  const { SALT_ROUND, EMAIL_SCRET_KEY } = process.env;
+  const { SALT_ROUND, EMAIL_SECRET_KEY } = process.env;
   if (!SALT_ROUND) {
     return res
       .status(404)
@@ -30,7 +30,7 @@ export const signup = async (req: Request, res: Response) => {
         )
       );
   }
-  if (!EMAIL_SCRET_KEY) {
+  if (!EMAIL_SECRET_KEY) {
     return res
       .status(404)
       .json(
@@ -46,7 +46,7 @@ export const signup = async (req: Request, res: Response) => {
     {
       email,
     },
-    EMAIL_SCRET_KEY
+    EMAIL_SECRET_KEY
   );
   await sendEmail(
     email,
@@ -60,4 +60,47 @@ export const signup = async (req: Request, res: Response) => {
     password: hashedPassword,
   });
   return res.status(201).json(response('success', user));
+};
+
+interface DecodedEmail {
+  email: string;
+}
+export const confirmEmail = async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { EMAIL_SECRET_KEY } = process.env;
+  if (!EMAIL_SECRET_KEY) {
+    return res
+      .status(404)
+      .json(
+        response(
+          'Please try again later.',
+          undefined,
+          'Internal environment variable not found (EMAIL_SCRET_KEY not found).'
+        )
+      );
+  }
+  const decodedEmail = jwt.verify(token, EMAIL_SECRET_KEY) as DecodedEmail;
+  if (!decodedEmail) {
+    return res
+      .status(404)
+      .json(response('something went wrong', undefined, 'invalid token'));
+  }
+  const user = await userModel.findOneAndUpdate(
+    {
+      email: decodedEmail.email,
+      confirmEmail: false,
+    },
+    {
+      confirmEmail: true,
+    },
+    { new: true }
+  );
+  if (!user) {
+    return res
+      .status(400)
+      .json(
+        response('something went wrong', undefined, 'invalid verify your email')
+      );
+  }
+  return res.status(200).json(response('your email is verified', user));
 };
