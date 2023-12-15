@@ -104,3 +104,56 @@ export const confirmEmail = async (req: Request, res: Response) => {
   }
   return res.status(200).json(response('your email is verified', user));
 };
+
+export const signin = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  const user = await userModel.findOne({ email });
+  if (!user) {
+    return res
+      .status(404)
+      .json(response('try another email', undefined, 'user not found'));
+  }
+  if (!user.confirmEmail) {
+    return res
+      .status(400)
+      .json(
+        response('email not confirmed', undefined, 'please confirm your email')
+      );
+  }
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return res.status(404).json(response('password wrong'));
+  }
+  const { LOGIN_SECRET_KEY } = process.env;
+  if (!LOGIN_SECRET_KEY) {
+    return res
+      .status(404)
+      .json(
+        response(
+          'Please try again later.',
+          undefined,
+          'Internal environment variable not found (LOGIN_SECRET_KEY not found).'
+        )
+      );
+  }
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      status: user.status,
+    },
+    LOGIN_SECRET_KEY,
+    { expiresIn: '2h' }
+  );
+
+  const refreshToekn = jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      status: user.status,
+    },
+    LOGIN_SECRET_KEY,
+    { expiresIn: 60 * 60 * 24 * 30 }
+  );
+  return res.status(200).json(response('success', { token, refreshToekn }));
+};
