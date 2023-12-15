@@ -174,3 +174,41 @@ export const sendForgotCode = async (req: Request, res: Response) => {
   await sendEmail(email, 'Reset Password', html);
   return res.status(200).json(response('success', user));
 };
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  const { email, password, code } = req.body;
+  const { SALT_ROUND } = process.env;
+  if (!SALT_ROUND) {
+    return res
+      .status(404)
+      .json(
+        response(
+          'Please try again later.',
+          undefined,
+          'Internal environment variable not found (SALT_ROUND not found).'
+        )
+      );
+  }
+  const hashedPassword = await bcrypt.hash(password, +SALT_ROUND);
+
+  const user = await userModel.findOneAndUpdate(
+    {
+      email,
+      sendCode: code,
+    },
+    {
+      $set: {
+        password: hashedPassword,
+        sendCode: null,
+        changePasswordTime: new Date(Date.now()),
+      },
+    },
+    { new: true }
+  );
+
+  if (!user) {
+    return res.status(404).json(response('email not found or invalid code.'));
+  }
+
+  return res.status(200).json(response('password changed successfully.'));
+};
