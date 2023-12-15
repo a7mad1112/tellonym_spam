@@ -3,6 +3,8 @@ import userModel from '../../db/models/user.model.js';
 import response from '../../utils/response.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sendEmail } from '../../utils/sendEmail.js';
+import { emailConfirmationTemplate } from '../../utils/EmailConfirmationForm.js';
 export const signup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
   if (await userModel.findOne({ email })) {
@@ -46,7 +48,12 @@ export const signup = async (req: Request, res: Response) => {
     },
     EMAIL_SCRET_KEY
   );
-  // send email
+  await sendEmail(
+    email,
+    'Activate Your Tellonym_Spammer Account',
+    emailConfirmationTemplate(req, token)
+  );
+
   const user = await userModel.create({
     userName,
     email,

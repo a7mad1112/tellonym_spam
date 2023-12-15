@@ -17,6 +17,5 @@ export async function sendEmail(to: string, subject: string, html: any) {
     html,
   };
   const info = await transporter.sendMail(mailOptions);
-  console.log('1234');
   return info;
 }
