@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import userModel from '../../db/models/user.model.js';
 import response from '../../utils/response.js';
 import bcrypt from 'bcryptjs';
@@ -6,6 +6,9 @@ import jwt from 'jsonwebtoken';
 import { sendEmail } from '../../utils/sendEmail.js';
 import { emailConfirmationTemplate } from '../../utils/EmailConfirmationForm.js';
 import { customAlphabet } from 'nanoid';
+import passport from 'passport';
+import User from '../../types/User.type.js';
+
 export const signup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
   if (await userModel.findOne({ email })) {
@@ -211,4 +214,36 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 
   return res.status(200).json(response('password changed successfully.'));
+};
+
+export const signinWithGoogle = passport.authenticate('google', {
+  scope: ['profile', 'email'],
+});
+export const signinWithGoogleCallback = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  passport.authenticate('google', (err: Error, user: User, info: any) => {
+    if (err) {
+      return res.status(500).json(response('internal server error'));
+    }
+
+    if (!user) {
+      return res
+        .status(401)
+        .json(
+          response(
+            'unauthorized',
+            undefined,
+            'failed to authenticate with Google'
+          )
+        );
+    }
+
+    // generate token and handle the auth logic here
+    // token = generateToken(user);
+
+    return res.status(200).json(response('success', 'token'));
+  })(req, res, next);
 };
