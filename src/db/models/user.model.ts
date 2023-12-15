@@ -19,7 +19,6 @@ const userSchema = new Schema<User>(
     },
     image: {
       type: Object,
-      required: true,
     },
     phone: {
       type: String,
